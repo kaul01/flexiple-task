@@ -1,15 +1,17 @@
-import React, { useRef, useState } from 'react';
+import React, { useRef, useState, useEffect } from 'react';
 import './App.css';
 import firebase from 'firebase/app';
 import 'firebase/firestore';
 import 'firebase/auth';
 import 'firebase/analytics';
+import { BsFillCaretUpFill } from 'react-icons/bs';
+import { AiFillDelete } from "react-icons/ai";
 
 import { useAuthState } from 'react-firebase-hooks/auth';
 import { useCollectionData } from 'react-firebase-hooks/firestore';
 
-firebase.initializeApp({
 
+firebase.initializeApp({
   apiKey: "AIzaSyDwqEqBPzLH4kPR_PEbVvA-xmNPYSKJ5u8",
     authDomain: "saiesh-chat.firebaseapp.com",
     projectId: "saiesh-chat",
@@ -17,12 +19,10 @@ firebase.initializeApp({
     messagingSenderId: "416144149501",
     appId: "1:416144149501:web:83c2d441b2dfb6dcfbe794",
     measurementId: "G-64WPEFRRRZ"
-
 })
 
 const auth = firebase.auth();
 const firestore = firebase.firestore();
-const analytics = firebase.analytics();
 
 
 function App() {
@@ -33,7 +33,7 @@ function App() {
     <div className="App">
 
       <header>
-        <h1>⚛️🔥💬</h1>
+        <h2>Flexiple - Chat Room</h2>
         <SignOut />
       </header>
 
@@ -54,8 +54,9 @@ function SignIn() {
 
   return (
     <>
-      <button className="sign-in" onClick={signInWithGoogle}>Sign in with Google</button>
-      <p>Do not violate the community guidelines or you will be banned for life!</p>
+      <button className="sign-in" onClick={signInWithGoogle}>
+        <img className="google" src="google.png" alt="Sign In With Google" />
+      </button>
     </>
   )
 
@@ -72,11 +73,8 @@ function ChatRoom() {
   const dummy = useRef();
   const messagesRef = firestore.collection('messages');
   const query = messagesRef.orderBy('createdAt').limit(25);
-
   const [messages] = useCollectionData(query, { idField: 'id' });
-
   const [formValue, setFormValue] = useState('');
-
 
   const sendMessage = async (e) => {
     e.preventDefault();
@@ -85,9 +83,12 @@ function ChatRoom() {
 
      messagesRef.add({
       text: formValue,
+      name: auth.currentUser.displayName,
+      email: auth.currentUser.email,
       createdAt: firebase.firestore.FieldValue.serverTimestamp(),
       uid,
-      photoURL
+      photoURL,
+      upvotes: 0
     })
 
     setFormValue('');
@@ -103,11 +104,11 @@ function ChatRoom() {
 
     </main>
 
-    <form onSubmit={sendMessage}>
+    <form className="new-message" onSubmit={sendMessage}>
 
       <input value={formValue} onChange={(e) => setFormValue(e.target.value)} placeholder="say something nice" />
 
-      <button type="submit" disabled={!formValue}>🕊️</button>
+      <button type="submit" disabled={!formValue}>Comment</button>
 
     </form>
   </>)
@@ -115,44 +116,221 @@ function ChatRoom() {
 
 
 function ChatMessage(props) {
-  const { text, uid, photoURL } = props.message;
+  const { text,name,email, uid, photoURL,createdAt, upvotes, id } = props.message;
+  const messagesRef = firestore.collection('messages');
+  const replies = firestore.collection('replies');
+  const [formValue, setFormValue] = useState('')
+  const [curReplies, setCurReplies] = useState([]);
 
-  const messageClass = uid === auth.currentUser.uid ? 'sent' : 'received';
+  const deleteComment = async(e) => {
+    e.preventDefault();
+    if(window.confirm("Delete this comment?")){
+      messagesRef.doc(id).delete();
+      replies.doc(id).delete();
+    }
+  }
+
+  const addUpvotes = async (e) => {
+    e.preventDefault();
+
+     messagesRef.doc(id).set({
+      text: text,
+      name: name,
+      email: email,
+      createdAt: createdAt,
+      uid: uid,
+      photoURL: photoURL,
+      upvotes: upvotes+1
+    })
+  }
+
+  const editComment = async (e) => {
+    e.preventDefault();
+    let editedComment = prompt("Edit your Comment" ,text);
+    if (editedComment !== null || editedComment !== "") {
+      messagesRef.doc(id).set({
+        text: editedComment,
+        name: name,
+        email: email,
+        createdAt: createdAt,
+        uid: uid,
+        photoURL: photoURL,
+        upvotes: upvotes
+      })
+    } 
+  }
+
+  const reply = async (e) => {
+    e.preventDefault();
+
+    const { uid, photoURL } = auth.currentUser;
+
+    replies.doc(id).collection("all").add({
+      text: formValue,
+      name: auth.currentUser.displayName,
+      parent: id,
+      email: auth.currentUser.email,
+      createdAt: firebase.firestore.FieldValue.serverTimestamp(),
+      uid,
+      photoURL,
+      upvotes: 0
+    })
+
+    setFormValue('');
+
+  }
+  useEffect(() => {
+    if(auth) {
+        replies
+        .doc(id)
+        .collection('all')
+        .orderBy('createdAt', 'desc')
+        .onSnapshot(snapshot => (
+          setCurReplies(snapshot.docs.map(doc => ({
+                id: doc.id,
+                data: doc.data()
+            })))
+        ))
+    } else {
+      setCurReplies([])
+    }
+  }, [])
+
 
   return (<>
-    <div className={`message ${messageClass}`}>
-      <img src={photoURL || 'https://api.adorable.io/avatars/23/abott@adorable.png'} alt="" />
-      <p>{text}</p>
+  <div className ="messages">
+    <div className = "message">
+      <div className = "image">
+        <div>
+            <img src={photoURL} alt="img" />
+        </div>
+      </div>
+      <div className = "message-componets">
+        <div className = "message-data">
+          <div className = "user-name">
+            <h4> {name} </h4>
+          </div>
+          <div className="message-text">
+            <p>{text}</p>
+          </div>
+        </div>
+        <div className = "message-functions">
+          <div className="upvote-button">
+            <button className="upvote" disabled={uid === auth.currentUser.uid} onClick={addUpvotes}>
+              <BsFillCaretUpFill />
+              {upvotes}
+            </button>
+          </div>
+          <div className="upvote-button">
+            <button className='modal-button' onClick={editComment} disabled={uid !== auth.currentUser.uid}>
+                Edit
+            </button>
+          </div>
+          <div className="upvote-button">
+            <button className="delete" disabled={uid !== auth.currentUser.uid} onClick={deleteComment}>
+              <AiFillDelete />
+            </button>
+          </div>
+          <div className="reply-button">
+            <form className="reply-form">
+              <input value={formValue} onChange={(e) => setFormValue(e.target.value)} placeholder="Reply ... ?" />
+              <button disabled={!formValue} onClick={reply}>
+                Reply
+              </button>
+            </form>
+          </div>
+        </div>
+      </div>
     </div>
+    <div>
+            {curReplies?.map(reply => (
+                <Reply key={reply.id} message={reply} />
+            ))}
+    </div>
+  </div>
   </>)
 }
 
+function Reply(props) {
+  const { id } = props.message;
+  const{ name, email, uid, photoURL,createdAt, text, parent, upvotes} = props.message.data;
 
+  const editComment = async (e) => {
+    e.preventDefault();
+    let editedComment = prompt("Edit your Comment" ,text);
+    if (editedComment !== null || editedComment !== "") {
+      firestore.collection('replies').doc(parent).collection('all').doc(id).set({
+        text: editedComment,
+        name: name,
+        parent: parent,
+        email: email,
+        createdAt: createdAt,
+        uid: uid,
+        photoURL: photoURL,
+        upvotes: upvotes
+      })
+    } 
+  }
+
+  const deleteReply = async (e) => {
+    e.preventDefault();
+    if(window.confirm("Delete this comment?")){
+      firestore.collection('replies').doc(parent).collection('all').doc(id).delete();
+    }
+  }
+
+  const addUpvotes = async (e) => {
+    e.preventDefault();
+
+    firestore.collection('replies').doc(parent).collection('all').doc(id).set({
+      text: text,
+      name: name,
+      parent: parent,
+      email: email,
+      createdAt: createdAt,
+      uid: uid,
+      photoURL: photoURL,
+      upvotes: upvotes+1
+    })
+  }
+  return (<div className=''>
+  <div className="replies">
+      <div className = "message">
+        <div className = "image">
+          <div>
+              <img src={photoURL} alt="img" />
+          </div>
+          
+        </div>
+        <div className = "message-componets">
+          <div className = "message-data">
+            <div className = "user-name">
+              <h4> {name} </h4>
+            </div>
+            <div className="message-text">
+              <p>{text}</p>
+            </div>
+          </div>
+          <div className = "message-functions">
+            <div className="upvote-button">
+              <button disabled={uid === auth.currentUser.uid} onClick={addUpvotes}>
+                <BsFillCaretUpFill />
+                {upvotes}
+              </button>
+            </div>
+            <div className="upvote-button">
+              <button onClick={editComment} disabled={uid !== auth.currentUser.uid}>Edit</button>
+            </div>
+            <div className="upvote-button">
+            <button className="delete" disabled={uid !== auth.currentUser.uid} onClick={deleteReply}>
+              <AiFillDelete />
+            </button>
+          </div>
+          </div>
+        </div>
+      </div>
+    </div>
+    </div>)
+}
 
 export default App;
-
-
-
-// rules_version = '2';
-// service cloud.firestore {
-//   match /databases/{database}/documents {
-//     match /{document=**} {
-//       allow read, write: if false;
-//     }
-    
-//     match /messages/{docId} {
-//     allow read : if request.auth.uid != null;
-//     allow create: if canCreateMessage();
-//     }
-    
-//     function canCreateMessage(){
-//     	 let isSignedIn = request.auth.uid != null;
-//        let isOwner = request.auth.uid == request.resource.data.uid;
-       
-//        let isNotBanned = exists(
-//        	/database/$(database)/documents/banned/$(request.auth.uid)
-//        ) == false;
-//        return isSignedIn && isOwner && isNotBanned;
-//     }
-//   }
-// }

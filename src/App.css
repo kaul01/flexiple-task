@@ -1,11 +1,19 @@
-body {
-  background-color: #282c34;
-}
 
-.App {
-  text-align: center;
-  max-width: 728px;
-  margin: 0 auto;
+body {
+  background-color:rgba(241, 253, 253, 0.788);
+}
+.open{
+  position: fixed;
+  /* display: none; */
+  width: 100%;
+  height: 100%;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: rgba(0,0,0,0.5);
+  z-index: 2;
+  cursor: pointer;
 }
 
 .App header {
@@ -15,7 +23,6 @@ body {
   color: white;
   position: fixed;
   width: 100%;
-  max-width: 728px;
   top: 0;
   display: flex;
   align-items: center;
@@ -30,7 +37,6 @@ body {
   flex-direction: column;
   justify-content: center;
   min-height: 100vh;
-  background-color: rgb(40, 37, 53);
 }
 
 main {
@@ -42,34 +48,30 @@ main {
   flex-direction: column;
 }
 
-main::-webkit-scrollbar {
-  width: 0.25rem;
-}
-
-main::-webkit-scrollbar-track {
-  background: #1e1e24;
-}
-
-main::-webkit-scrollbar-thumb {
-  background: #6649b8;
-}
-
-form {
+form.new-message {
   height: 10vh;
   position: fixed;
   bottom: 0;
   background-color: rgb(24, 23, 23);
   width: 100%;
-  max-width: 728px;
   display: flex;
   font-size: 1.5rem;
+
 }
 
-form button {
-  width: 20%;
+form.new-message button {
+
   background-color: rgb(56, 56, 143);
+  color:white;
 }
-
+form.reply-form{
+  display:flex;
+}
+form.reply-form button{
+  background-color: rgb(56, 56, 143);
+  color:white;
+  /* width:20%; */
+}
 
 input {
   line-height: 1.5;
@@ -82,10 +84,10 @@ input {
   padding: 0 10px;
 }
 
-button {
-  background-color: #282c34; /* Green */
+button{
+  background-color: rgba(241, 253, 253, 0.788);
   border: none;
-  color: white;
+  color: black;
   padding: 15px 32px;
   text-align: center;
   text-decoration: none;
@@ -100,15 +102,15 @@ button:disabled {
 }
 
 
-.sign-in {
-  color: #282c34;
-  background: white;
-  max-width: 400px;
+.sign-in { 
   margin: 0 auto;
+  width: 20em;
 }
-
-
-
+.google{
+  width: 100%;
+  height: 100%;
+  border-radius: 0%;
+}
 
 ul, li {
   text-align: left;
@@ -122,28 +124,15 @@ p {
   padding: 10px 20px;
   border-radius: 25px;
   position: relative;
-  color: white;
+  color: black;
   text-align: center;
+}
+.messages{
+  max-width: 100%;
 }
 
 .message {
   display: flex;
-  align-items: center;
-}
-
-
-.sent {
-  flex-direction: row-reverse;
-}
-
-.sent p {
-  color: white;
-  background: #0b93f6;
-  align-self: flex-end;
-}
-.received p {
-  background: #e5e5ea;
-  color: black;
 }
 
 img {
@@ -151,4 +140,56 @@ img {
   height: 40px;
   border-radius: 50%;
   margin: 2px 5px;
+}
+.image{
+  vertical-align:top;
+  /* flex: 1 1 0 */
+}
+.message-componets{
+  flex : 1 1 0;
+  max-width: 100;
+}
+.message-data{
+  /* padding: 3px; */
+  border-style: solid;
+  border-color: black;
+  border-radius: 8px;
+  border-width: 1px;
+
+}
+.user-name{
+  display: flex;
+  color: black;
+  align-content: left;
+  padding:0px;
+  padding-left: 10px;
+}
+.message-text{
+  display: flex;
+  align-content: left;
+}
+.message-functions {
+  display: flex;
+  flex-wrap: wrap;
+  padding:5px;
+}
+.reply-button{
+  display: flex;
+}
+.upvote-button{
+   padding-right: 2px;
+   display: inline-block;
+   white-space: nowrap;
+}
+.replies{
+  margin-left:5em;
+}
+@media screen and (max-width: 480px) {
+  .replies{
+    margin-left:3em;
+  }
+  .upvote-button{
+    margin-right:-20px;
+  }
+  
 }
